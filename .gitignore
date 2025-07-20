@@ -1,0 +1,40 @@
+# Local .terraform directories
+.terraform/
+
+# .tfstate files
+*.tfstate
+*.tfstate.*
+
+# Crash logs
+crash.log
+
+# Exclude CLI configuration files
+.terraformrc
+terraform.rc
+
+# Exclude plan output files
+*.tfplan
+
+# Sensitive variable files
+*.tfvars
+*.tfvars.json
+
+# Override files (often used locally)
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Ignore .terraform.lock.hcl if you don’t want to commit provider version locks
+# (But it’s usually recommended to commit this!)
+# .terraform.lock.hcl
+
+# Ignore backup files created by some editors
+*.bak
+
+# Ignore editor swap or temp files
+*~
+*.swp
+.terraform.lock.hcl
+.terraform.lock.hcl
+.terraform.lock.hcl
