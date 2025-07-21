@@ -9,9 +9,11 @@ resource "aws_instance" "demo_instance" {
   vpc_security_group_ids = [ aws_security_group.demo-sg.id]
   subnet_id = aws_subnet.demo_public_subnet-01.id
   associate_public_ip_address = true
-  tags = {
-    Name = "DemoInstance"
-  }
+
+  for_each = toset(["jenkins-master", "jenkins-slave","Ansible"])
+   tags = {
+     Name = "${each.key}"
+   }
 }
 
 resource "aws_security_group" "demo-sg" {
