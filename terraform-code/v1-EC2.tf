@@ -2,44 +2,6 @@ provider "aws" {
   region="us-east-1"
 }
 
-resource "aws_instance" "demo_instance" {
-  ami           = "ami-020cba7c55df1f615"
-  instance_type = "t2.micro"
-  key_name = "data"
-  vpc_security_group_ids = [ aws_security_group.demo-sg.id]
-  subnet_id = aws_subnet.demo_public_subnet-01.id
-  associate_public_ip_address = true
-
-  for_each = toset(["jenkins-master", "jenkins-slave","Ansible"])
-   tags = {
-     Name = "${each.key}"
-   }
-}
-
-resource "aws_security_group" "demo-sg" {
-  vpc_id = aws_vpc.demo.id
-  name        = "demo-sg"
-  description = "Allow SSH"
-
-  tags = {
-    Name = "allow_SSH"
-  }
-}
-
-resource "aws_vpc_security_group_ingress_rule" "allow_ssh_ipv4" {
-  security_group_id=aws_security_group.demo-sg.id
-  from_port        = 22
-  cidr_ipv4        = "0.0.0.0/0"
-  ip_protocol      = "tcp"
-  to_port          = 22
-}
-
-resource "aws_vpc_security_group_egress_rule" "allow_all_traffic_ipv4" {
-  security_group_id = aws_security_group.demo-sg.id
-  cidr_ipv4         = "0.0.0.0/0"
-  ip_protocol       = "-1" # semantically equivalent to all ports
-}
-
 resource "aws_vpc" "demo" {
     cidr_block = "10.0.0.0/16"
     
@@ -101,3 +63,69 @@ resource "aws_route_table_association" "public-sunbnet-association-02" {
   route_table_id = aws_route_table.demo_public_rt.id
 }
 
+resource "aws_security_group" "demo-sg" {
+  vpc_id = aws_vpc.demo.id
+  name        = "demo-sg"
+  description = "Allow SSH"
+
+  tags = {
+    Name = "allow_SSH"
+  }
+}
+
+resource "aws_vpc_security_group_ingress_rule" "allow_ssh_ipv4" {
+  security_group_id=aws_security_group.demo-sg.id
+  from_port        = 22
+  cidr_ipv4        = "0.0.0.0/0"
+  ip_protocol      = "tcp"
+  to_port          = 22
+}
+
+resource "aws_vpc_security_group_egress_rule" "allow_all_traffic_ipv4" {
+  security_group_id = aws_security_group.demo-sg.id
+  cidr_ipv4         = "0.0.0.0/0"
+  ip_protocol       = "-1" # semantically equivalent to all ports
+}
+
+resource "aws_instance" "demo_instance" {
+  for_each = toset(["jenkins-master", "jenkins-slave", "Ansible"])
+
+  ami                         = "ami-020cba7c55df1f615"
+  instance_type               = "t2.micro"
+  key_name                    = "data"
+  vpc_security_group_ids      = [aws_security_group.demo-sg.id]
+  subnet_id                   = aws_subnet.demo_public_subnet-01.id
+  associate_public_ip_address = true
+
+  user_data = (
+    each.key == "Ansible" ? <<-EOF
+#!/bin/bash
+apt-get update -y
+apt-get install -y software-properties-common
+add-apt-repository --yes --update ppa:ansible/ansible
+apt-get install -y ansible
+EOF
+    : ""
+  )
+
+  tags = {
+    Name = each.key
+  }
+}
+
+resource "null_resource" "push_ansible_files" {
+  # Filter to just Ansible instance
+  for_each = { for k, v in aws_instance.demo_instance : k => v if k == "Ansible" }
+
+  provisioner "file" {
+    source      = "/home/cloud_user/complete-devops/ansible"
+    destination = "/home/ubuntu/ansible"
+
+    connection {
+      type        = "ssh"
+      host        = each.value.public_ip
+      user        = "ubuntu"
+      private_key = file("/home/cloud_user/keypair/data.pem")
+    }
+  }
+}
