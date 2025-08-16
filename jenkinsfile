@@ -1,15 +1,21 @@
 pipeline {
     agent 
     { 
-         node
+
+        node
         {
             label 'maven-slave'
         }
     } 
+
+    environment {
+        PATH = "/opt/apache-maven-3.9.11/bin:$PATH"
+    }
+    
     stages {
-        stage("clone code") {
+        stage('build') {
             steps {
-                git branch: 'main', url: 'https://github.com/ajaykumarbk/devops-project.git'
+                sh 'mvn clean deploy'
             }
         }
     }
