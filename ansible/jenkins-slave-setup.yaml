@@ -1,0 +1,19 @@
+---
+- hosts: jenkins-slave
+  become: true
+  tasks:
+    - name: update ununtu and apt
+      apt:
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: download maven package
+      get_url:
+        url: https://archive.apache.org/dist/maven/maven-3/3.9.11/binaries/apache-maven-3.9.11-bin.tar.gz
+        dest: /opt/apache-maven-3.9.11-bin.tar.gz
+
+    - name: Extract maven package
+      unarchive:
+        src: /opt/apache-maven-3.9.11-bin.tar.gz
+        dest: /opt
+        remote_src: true

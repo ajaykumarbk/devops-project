@@ -1,4 +1,4 @@
-k---
+---
 - hosts: jenkins-master
   become: true
   tasks:
@@ -38,4 +38,3 @@ k---
       name: jenkins
       state: started
       enabled: true
-
